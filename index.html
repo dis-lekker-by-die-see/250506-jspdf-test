@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">PDF</a></li>
+        <li><a href="image_capture.html">Image Capture</a></li>
+      </ul>
+    </nav>
+  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <title>書店在庫レポート</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
+  </head>
+  <body>
+    <h1>書店在庫レポートを生成</h1>
+    <button id="generateBtn" onclick="generatePDF()" disabled>
+      PDFをダウンロード
+    </button>
+
+    <script>
+      //const ttf_font = "ipaexg.ttf";
+      //const base64_font = "IPAexgBase64.txt";
+      const ttf_font = "ipaexm.ttf";
+      const base64_font = "IPAexmBase64.txt";
+
+      const reportData = {
+        reportDate: "2025-05-06",
+        storeName: "東京書店",
+        totalBooks: 1500,
+        categories: ["小説", "ノンフィクション", "SF", "ミステリー"],
+        totalSales: 1250000,
+        books: [
+          {
+            title: "グレート・ギャツビー",
+            author: "F・スコット・フィッツジェラルド",
+            price: 1299,
+            stock: 45,
+            isbn: "978-0743273565",
+            genre: "小説",
+          },
+          {
+            title: "サピエンス全史",
+            author: "ユヴァル・ノア・ハラリ",
+            price: 1850,
+            stock: 30,
+            isbn: "978-0062316097",
+            genre: "ノンフィクション",
+          },
+          {
+            title: "デューン",
+            author: "フランク・ハーバート",
+            price: 1575,
+            stock: 60,
+            isbn: "978-0441172719",
+            genre: "SF",
+          },
+          {
+            title: "ダ・ヴィンチ・コード",
+            author: "ダン・ブラウン",
+            price: 1425,
+            stock: 25,
+            isbn: "978-0307474278",
+            genre: "ミステリー",
+          },
+          {
+            title: "1984",
+            author: "ジョージ・オーウェル",
+            price: 1099,
+            stock: 50,
+            isbn: "978-0451524935",
+            genre: "小説",
+          },
+          {
+            title: "星の王子さま",
+            author: "アントワーヌ・ド・サン＝テグジュペリ",
+            price: 999,
+            stock: 40,
+            isbn: "978-0156012195",
+            genre: "小説",
+          },
+        ],
+        salesSummary: [
+          { genre: "小説", unitsSold: 200, revenue: 250000 },
+          { genre: "ノンフィクション", unitsSold: 150, revenue: 300000 },
+          { genre: "SF", unitsSold: 100, revenue: 200000 },
+          { genre: "ミステリー", unitsSold: 120, revenue: 240000 },
+        ],
+        contact: {
+          email: "info@tokyo-books.co.jp",
+          phone: "03-1234-5678",
+          website: "https://tokyo-books.co.jp",
+        },
+      };
+
+      let fontReady = false;
+      let base64Font = "";
+
+      window.onload = async () => {
+        try {
+          const res = await fetch("/" + base64_font);
+          if (!res.ok) throw new Error(`Fetch failed: ${res.statusText}`);
+          base64Font = await res.text();
+          if (base64Font.length < 1000 || !/^[A-Za-z0-9+/=]+$/.test(base64Font))
+            throw new Error(`Invalid base64 data in ${base64_font}`);
+          fontReady = true;
+          document.getElementById("generateBtn").disabled = false;
+        } catch (e) {
+          console.error(`Failed to load ${base64_font}:`, e);
+          // Fallback to direct TTF loading
+          try {
+            const ttfRes = await fetch("/" + ttf_font);
+            if (!ttfRes.ok)
+              throw new Error(`Fetch TTF failed: ${ttfRes.statusText}`);
+            const fontData = await ttfRes.arrayBuffer();
+            if (fontData.byteLength < 1000)
+              throw new Error("Font file is too small or corrupted");
+            base64Font = btoa(
+              new Uint8Array(fontData).reduce(
+                (data, byte) => data + String.fromCharCode(byte),
+                ""
+              )
+            );
+            fontReady = true;
+            document.getElementById("generateBtn").disabled = false;
+          } catch (ttfError) {
+            console.error("Fallback TTF loading failed:", ttfError);
+            alert(
+              `Failed to load font. Ensure /${base64_font} or /${ttf_font} is valid and accessible. Download from https://moji.or.jp/ipafont/.`
+            );
+          }
+        }
+      };
+
+      async function generatePDF() {
+        if (!fontReady) return alert("Font not loaded yet.");
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: "portrait", unit: "pt" });
+
+        try {
+          doc.addFileToVFS("IPAexGothic.ttf", base64Font);
+          doc.addFont("IPAexGothic.ttf", "IPAexGothic", "normal");
+          doc.setFont("IPAexGothic");
+        } catch (e) {
+          console.error("Font embedding failed:", e);
+          alert(
+            "Failed to embed IPAexGothic font. Ensure the base64 or TTF file is valid."
+          );
+          return;
+        }
+
+        // Header & Footer helpers
+        function addHeader() {
+          doc.setFillColor(30, 144, 255);
+          doc.rect(0, 0, 595.28, 50, "F");
+          doc.setTextColor(0);
+          doc.setFontSize(14);
+          doc.text("書店在庫レポート", 297.64, 20, { align: "center" });
+          doc.setFontSize(10);
+          doc.text(
+            `店舗: ${reportData.storeName} | 日付: ${reportData.reportDate}`,
+            297.64,
+            35,
+            { align: "center" }
+          );
+          doc.setDrawColor(0);
+          doc.line(14.17, 50, 581.11, 50);
+        }
+
+        function addFooter() {
+          doc.setFillColor(211, 211, 211);
+          doc.rect(0, 811.89, 595.28, 30, "F");
+          doc.setFontSize(8);
+          doc.setTextColor(0);
+          doc.text("ページ 1/1", 581.11, 827.89, { align: "right" });
+          doc.text(
+            `生成: 東京書店システム | 連絡先: ${reportData.contact.email} | 電話: ${reportData.contact.phone}`,
+            14.17,
+            827.89
+          );
+          doc.setTextColor(0, 0, 255);
+          doc.textWithLink("ウェブサイト", 14.17, 827.89, {
+            url: reportData.contact.website,
+          });
+        }
+
+        addHeader();
+
+        // Summary
+        doc.setDrawColor(41, 128, 185);
+        doc.setLineWidth(1);
+        doc.roundedRect(14.17, 60, 566.94, 80, 5, 5, "S");
+        doc.setFontSize(10);
+        const summaryText = [
+          `総在庫: ${reportData.totalBooks}冊`,
+          `カテゴリー: ${reportData.categories.join("、")}`,
+          `総売上: ¥${reportData.totalSales.toLocaleString()}`,
+        ];
+        summaryText.forEach((text, i) => {
+          doc.text(text, 20 + i * 190, 80, { maxWidth: 180 });
+        });
+        doc.setFontSize(8);
+        doc.text(
+          "注: データはレポート日時点の在庫状況を反映しています。",
+          20,
+          130,
+          { maxWidth: 546.94 }
+        );
+
+        // Book inventory table
+        doc.autoTable({
+          startY: 150,
+          head: [["タイトル", "著者", "価格 (¥)", "在庫", "ISBN", "ジャンル"]],
+          body: reportData.books.map((book) => [
+            book.title,
+            book.author,
+            {
+              content: book.price.toLocaleString(),
+              styles: { font: "helvetica" },
+            },
+            { content: book.stock, styles: { font: "helvetica" } },
+            { content: book.isbn, styles: { font: "helvetica" } },
+            book.genre,
+          ]),
+          theme: "grid",
+          headStyles: {
+            fillColor: [41, 128, 185],
+            textColor: [255, 255, 255],
+            fontSize: 10,
+            font: "IPAexGothic",
+          },
+          bodyStyles: {
+            fontSize: 8,
+            textColor: [0, 0, 0],
+            font: "IPAexGothic",
+          },
+          alternateRowStyles: { fillColor: [230, 240, 255] },
+          margin: { top: 30, left: 14.17, right: 14.17 },
+          columnStyles: {
+            0: { overflow: "linebreak", minCellWidth: 80 },
+            1: { overflow: "linebreak", minCellWidth: 80 },
+            2: { halign: "right", overflow: "linebreak", minCellWidth: 50 },
+            3: { halign: "center", overflow: "linebreak", minCellWidth: 40 },
+            4: { overflow: "linebreak", minCellWidth: 60 },
+            5: { overflow: "linebreak", minCellWidth: 50 },
+          },
+          tableWidth: "wrap",
+          didDrawPage: () => {
+            addHeader();
+            addFooter();
+          },
+        });
+
+        // Sales summary table
+        const lastY = doc.lastAutoTable.finalY + 10;
+        doc.autoTable({
+          startY: lastY,
+          head: [["ジャンル", "販売数", "収益 (¥)"]],
+          body: reportData.salesSummary.map((sale) => [
+            sale.genre,
+            { content: sale.unitsSold, styles: { font: "helvetica" } },
+            {
+              content: sale.revenue.toLocaleString(),
+              styles: { font: "helvetica" },
+            },
+          ]),
+          theme: "striped",
+          headStyles: {
+            fillColor: [100, 149, 237],
+            textColor: [255, 255, 255],
+            fontSize: 9,
+            font: "IPAexGothic",
+          },
+          bodyStyles: {
+            fontSize: 8,
+            textColor: [0, 0, 0],
+            font: "IPAexGothic",
+          },
+          margin: { left: 14.17, right: 14.17 },
+          columnStyles: {
+            0: { overflow: "linebreak", minCellWidth: 60 },
+            1: { halign: "center", overflow: "linebreak", minCellWidth: 40 },
+            2: { halign: "right", overflow: "linebreak", minCellWidth: 60 },
+          },
+          tableWidth: "wrap",
+        });
+
+        // Annotation
+        const finalY = doc.lastAutoTable.finalY + 10;
+        if (finalY < 800) {
+          doc.setFont("IPAexGothic", "normal");
+          doc.setFontSize(7);
+          doc.setTextColor(100, 100, 100);
+          doc.text(
+            "データ精度: このレポートは自動生成され、最新の在庫システムに基づいています。",
+            14.17,
+            finalY,
+            { maxWidth: 566.94 }
+          );
+        }
+
+        doc.save("書店在庫レポート.pdf");
+      }
+    </script>
+  </body>
+</html>

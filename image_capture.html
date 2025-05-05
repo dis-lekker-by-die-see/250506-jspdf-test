@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">PDF</a></li>
+        <li><a href="image_capture.html">Image Capture</a></li>
+      </ul>
+    </nav>
+  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Camera Capture Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        text-align: center;
+      }
+      button {
+        padding: 12px 24px;
+        margin: 10px;
+        font-size: 18px;
+        cursor: pointer;
+      }
+      #thumbnail {
+        max-width: 200px;
+        max-height: 200px;
+        display: none;
+        margin: 10px auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Test Camera Capture</h1>
+    <input
+      type="file"
+      id="imageInput"
+      accept="image/*"
+      capture
+      style="display: none"
+    />
+    <button id="captureBtn">Capture Image</button>
+    <div>
+      <img id="thumbnail" alt="Thumbnail" />
+    </div>
+    <button id="downloadBtn" style="display: none">Download Image</button>
+
+    <script>
+      const imageInput = document.getElementById("imageInput");
+      const captureBtn = document.getElementById("captureBtn");
+      const thumbnail = document.getElementById("thumbnail");
+      const downloadBtn = document.getElementById("downloadBtn");
+      let imageFile = null;
+
+      // Trigger camera (or file picker as fallback) on capture button click
+      captureBtn.addEventListener("click", () => {
+        imageInput.click();
+      });
+
+      // Handle image capture and display thumbnail
+      imageInput.addEventListener("change", () => {
+        if (imageInput.files && imageInput.files[0]) {
+          imageFile = imageInput.files[0];
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            thumbnail.src = e.target.result;
+            thumbnail.style.display = "block";
+            downloadBtn.style.display = "inline-block";
+          };
+          reader.readAsDataURL(imageFile);
+        }
+      });
+
+      // Download full-size image
+      downloadBtn.addEventListener("click", () => {
+        if (imageFile) {
+          const url = URL.createObjectURL(imageFile);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `box_image_${new Date()
+            .toISOString()
+            .replace(/[:.]/g, "-")}.jpg`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -21,10 +21,10 @@
     </button>
 
     <script>
-      //const ttf_font = "ipaexg.ttf";
-      //const base64_font = "IPAexgBase64.txt";
-      const ttf_font = "ipaexm.ttf";
-      const base64_font = "ipaexmbase64.txt";
+      const ttf_font = "ipaexg.ttf";
+      const base64_font = "ipaexgbase64.txt";
+      // const ttf_font = "ipaexm.ttf";
+      // const base64_font = "ipaexmbase64.txt";
 
       const reportData = {
         reportDate: "2025-05-06",
@@ -151,6 +151,18 @@
           );
           return;
         }
+
+        // try {
+        //   doc.addFileToVFS("IPAexMincho.ttf", base64Font);
+        //   doc.addFont("IPAexMincho.ttf", "IPAexMincho", "normal");
+        //   doc.setFont("IPAexMincho");
+        // } catch (e) {
+        //   console.error("Font embedding failed:", e);
+        //   alert(
+        //     "Failed to embed IPAexMincho font. Ensure the base64 or TTF file is valid."
+        //   );
+        //   return;
+        // }
 
         // Header & Footer helpers
         function addHeader() {

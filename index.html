@@ -101,7 +101,7 @@
       window.onload = async () => {
         try {
           // const res = await fetch("/" + base64_font);
-          const res = await fetch("/" + base64_font);
+          const res = await fetch(base64_font);
           if (!res.ok) throw new Error(`Fetch failed: ${res.statusText}`);
           base64Font = await res.text();
           if (base64Font.length < 1000 || !/^[A-Za-z0-9+/=]+$/.test(base64Font))
@@ -113,7 +113,7 @@
           // Fallback to direct TTF loading
           try {
             // const ttfRes = await fetch("/" + ttf_font);
-            const ttfRes = await fetch("/" + ttf_font);
+            const ttfRes = await fetch(ttf_font);
             if (!ttfRes.ok)
               throw new Error(`Fetch TTF failed: ${ttfRes.statusText}`);
             const fontData = await ttfRes.arrayBuffer();
